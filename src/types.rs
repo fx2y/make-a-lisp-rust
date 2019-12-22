@@ -4,7 +4,7 @@ use fnv::FnvHashMap;
 use itertools::Itertools;
 
 use crate::types::MalErr::ErrString;
-use crate::types::MalVal::{Bool, Hash, Int, List, Nil, Str, Sym, Vector};
+use crate::types::MalVal::{Bool, Func, Hash, Int, List, Nil, Str, Sym, Vector};
 
 #[derive(Clone)]
 pub enum MalVal {
@@ -16,6 +16,7 @@ pub enum MalVal {
     List(Rc<Vec<MalVal>>, Rc<MalVal>),
     Vector(Rc<Vec<MalVal>>, Rc<MalVal>),
     Hash(Rc<FnvHashMap<String, MalVal>>, Rc<MalVal>),
+    Func(fn(MalArgs) -> MalRet, Rc<MalVal>),
 }
 
 pub enum MalErr {
@@ -43,6 +44,15 @@ macro_rules! vector {
         let v: Vec<MalVal> = vec![$($args), *];
         Vector(Rc::new(v), Rc::new(Nil))
     }}
+}
+
+impl MalVal {
+    pub fn apply(&self, args: MalArgs) -> MalRet {
+        match *self {
+            Func(f, _) => f(args),
+            _ => error("attempt to call non-function"),
+        }
+    }
 }
 
 impl PartialEq for MalVal {
@@ -86,6 +96,10 @@ pub fn format_error(e: MalErr) -> String {
     match e {
         ErrString(s) => s.clone(),
     }
+}
+
+pub fn func(f: fn(MalArgs) -> MalRet) -> MalVal {
+    Func(f, Rc::new(Nil))
 }
 
 pub fn hash_map(kvs: MalArgs) -> MalRet {
