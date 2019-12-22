@@ -11,17 +11,15 @@ use fnv::FnvHashMap;
 use rustyline::Editor;
 use rustyline::error::ReadlineError;
 
+use crate::env::{Env, env_get, env_new, env_sets};
 use crate::types::{error, format_error, func, MalArgs, MalErr, MalRet, MalVal};
-use crate::types::MalErr::ErrString;
 use crate::types::MalVal::{Hash, Int, List, Nil, Sym, Vector};
-
 
 #[macro_use]
 mod types;
+mod env;
 mod printer;
 mod reader;
-
-pub type Env = FnvHashMap<String, MalVal>;
 
 fn read(str: &str) -> MalRet {
     reader::read_str(str.to_string())
@@ -29,7 +27,7 @@ fn read(str: &str) -> MalRet {
 
 fn eval_ast(ast: &MalVal, env: &Env) -> MalRet {
     match ast {
-        Sym(sym) => Ok(env.get(sym).ok_or(ErrString(format!("'{}' not found", sym)))?.clone()),
+        Sym(_) => Ok(env_get(&env, &ast)?),
         List(v, _) => {
             let mut lst: MalArgs = vec![];
             for a in v.iter() {
@@ -96,11 +94,11 @@ fn main() {
         eprintln!("No previous history.");
     }
 
-    let mut repl_env = Env::default();
-    repl_env.insert("+".to_string(), func(|a: MalArgs| int_op(|i, j| i + j, a)));
-    repl_env.insert("-".to_string(), func(|a: MalArgs| int_op(|i, j| i - j, a)));
-    repl_env.insert("*".to_string(), func(|a: MalArgs| int_op(|i, j| i * j, a)));
-    repl_env.insert("/".to_string(), func(|a: MalArgs| int_op(|i, j| i / j, a)));
+    let repl_env = env_new(None);
+    env_sets(&repl_env, "+", func(|a: MalArgs| int_op(|i, j| i + j, a)));
+    env_sets(&repl_env, "-", func(|a: MalArgs| int_op(|i, j| i - j, a)));
+    env_sets(&repl_env, "*", func(|a: MalArgs| int_op(|i, j| i * j, a)));
+    env_sets(&repl_env, "/", func(|a: MalArgs| int_op(|i, j| i / j, a)));
 
     loop {
         let readline = rl.readline("user> ");
