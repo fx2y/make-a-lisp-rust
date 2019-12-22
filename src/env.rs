@@ -39,6 +39,16 @@ pub fn env_get(env: &Env, key: &MalVal) -> MalRet {
     }
 }
 
+pub fn env_set(env: &Env, key: MalVal, val: MalVal) -> MalRet {
+    match key {
+        Sym(ref s) => {
+            env.data.borrow_mut().insert(s.to_string(), val.clone());
+            Ok(val)
+        }
+        _ => error("Env.set called with non-Str"),
+    }
+}
+
 pub fn env_sets(env: &Env, key: &str, val: MalVal) {
     env.data.borrow_mut().insert(key.to_string(), val);
 }

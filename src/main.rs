@@ -11,7 +11,7 @@ use fnv::FnvHashMap;
 use rustyline::Editor;
 use rustyline::error::ReadlineError;
 
-use crate::env::{Env, env_get, env_new, env_sets};
+use crate::env::{Env, env_get, env_new, env_set, env_sets};
 use crate::types::{error, format_error, func, MalArgs, MalErr, MalRet, MalVal};
 use crate::types::MalVal::{Hash, Int, List, Nil, Sym, Vector};
 
@@ -59,12 +59,18 @@ fn eval(ast: MalVal, env: Env) -> MalRet {
             if l.len() == 0 {
                 return Ok(ast);
             }
-            match eval_ast(&ast, &env)? {
-                List(ref el, _) => {
-                    let ref f = el[0].clone();
-                    f.apply(el[1..].to_vec())
+            let a0 = &l[0];
+            match a0 {
+                Sym(ref a0sym) if a0sym == "def!" => {
+                    env_set(&env, l[1].clone(), eval(l[2].clone(), env.clone())?)
                 }
-                _ => error("expected a list"),
+                _ => match eval_ast(&ast, &env)? {
+                    List(ref el, _) => {
+                        let ref f = el[0].clone();
+                        f.apply(el[1..].to_vec())
+                    }
+                    _ => error("expected a list")
+                }
             }
         }
         _ => eval_ast(&ast, &env),
