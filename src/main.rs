@@ -1,7 +1,16 @@
+#[macro_use]
+extern crate lazy_static;
+extern crate regex;
 extern crate rustyline;
 
 use rustyline::Editor;
 use rustyline::error::ReadlineError;
+
+use crate::types::format_error;
+
+mod types;
+mod printer;
+mod reader;
 
 fn main() {
     let mut rl = Editor::<()>::new();
@@ -16,7 +25,12 @@ fn main() {
                 rl.add_history_entry(&line);
                 rl.save_history(".mal-history").unwrap();
                 if line.len() > 0 {
-                    println!("{}", line);
+                    match reader::read_str(line) {
+                        Ok(mv) => {
+                            println!("{}", mv.pr_str(true));
+                        }
+                        Err(e) => println!("Error: {}", format_error(e)),
+                    }
                 }
             }
             Err(ReadlineError::Interrupted) => continue,
