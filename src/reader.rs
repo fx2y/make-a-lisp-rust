@@ -98,6 +98,22 @@ fn read_seq(rdr: &mut Reader, end: &str) -> MalRet {
 fn read_form(rdr: &mut Reader) -> MalRet {
     let token = rdr.peek()?;
     match &token[..] {
+        "'" => {
+            let _ = rdr.next();
+            Ok(list![Sym("quote".to_string()), read_form(rdr)?])
+        }
+        "`" => {
+            let _ = rdr.next();
+            Ok(list![Sym("quasiquote".to_string()), read_form(rdr)?])
+        }
+        "~" => {
+            let _ = rdr.next();
+            Ok(list![Sym("unquote".to_string()), read_form(rdr)?])
+        }
+        "~@" => {
+            let _ = rdr.next();
+            Ok(list![Sym("splice-unquote".to_string()), read_form(rdr)?])
+        }
         ")" => error("unexpected ')'"),
         "(" => read_seq(rdr, ")"),
         "]" => error("unexpected ']'"),
