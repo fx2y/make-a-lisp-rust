@@ -1,5 +1,5 @@
 use crate::types::MalVal;
-use crate::types::MalVal::{Bool, Int, Nil, Str, Sym};
+use crate::types::MalVal::{Bool, Int, List, Nil, Str, Sym, Vector};
 
 fn escape_str(s: &str) -> String {
     s.chars().map(|c| match c {
@@ -8,6 +8,11 @@ fn escape_str(s: &str) -> String {
         '\\' => "\\\\".to_string(),
         _ => c.to_string(),
     }).collect::<Vec<String>>().join("")
+}
+
+fn pr_seq(seq: &Vec<MalVal>, print_readably: bool, start: &str, end: &str, join: &str) -> String {
+    let strs: Vec<String> = seq.iter().map(|x| x.pr_str(print_readably)).collect();
+    format!("{}{}{}", start, strs.join(join), end)
 }
 
 impl MalVal {
@@ -27,6 +32,8 @@ impl MalVal {
                 }
             }
             Sym(s) => s.clone(),
+            List(l, _) => pr_seq(&**l, print_readably, "(", ")", " "),
+            Vector(l, _) => pr_seq(&**l, print_readably, "[", "]", " "),
         }
     }
 }

@@ -8,6 +8,7 @@ use rustyline::error::ReadlineError;
 
 use crate::types::format_error;
 
+#[macro_use]
 mod types;
 mod printer;
 mod reader;

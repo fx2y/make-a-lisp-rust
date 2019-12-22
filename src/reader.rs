@@ -1,8 +1,10 @@
+use std::rc::Rc;
+
 use regex::{Captures, Regex};
 
-use crate::types::{error, MalErr, MalRet};
+use crate::types::{error, MalErr, MalRet, MalVal};
 use crate::types::MalErr::ErrString;
-use crate::types::MalVal::{Bool, Int, Nil, Str, Sym};
+use crate::types::MalVal::{Bool, Int, List, Nil, Str, Sym, Vector};
 
 struct Reader {
     tokens: Vec<String>,
@@ -13,6 +15,9 @@ impl Reader {
     fn next(&mut self) -> Result<String, MalErr> {
         self.pos = self.pos + 1;
         Ok(self.tokens.get(self.pos - 1).ok_or(ErrString("underflow".to_string()))?.to_string())
+    }
+    fn peek(&self) -> Result<String, MalErr> {
+        Ok(self.tokens.get(self.pos).ok_or(ErrString("underflow".to_string()))?.to_string())
     }
 }
 
@@ -69,13 +74,45 @@ fn read_atom(rdr: &mut Reader) -> MalRet {
     }
 }
 
+fn read_seq(rdr: &mut Reader, end: &str) -> MalRet {
+    let mut seq: Vec<MalVal> = vec![];
+    rdr.next()?;
+    loop {
+        let token = match rdr.peek() {
+            Ok(t) => t,
+            Err(_) => return error(&format!("expected '{}', got EOF", end)),
+        };
+        if token == end.to_string() {
+            break;
+        }
+        seq.push(read_form(rdr)?)
+    }
+    let _ = rdr.next();
+    match end {
+        ")" => Ok(list!(seq)),
+        "]" => Ok(vector!(seq)),
+        _ => error("read_seq unknown end value"),
+    }
+}
+
+fn read_form(rdr: &mut Reader) -> MalRet {
+    let token = rdr.peek()?;
+    match &token[..] {
+        ")" => error("unexpected ')'"),
+        "(" => read_seq(rdr, ")"),
+        "]" => error("unexpected ']'"),
+        "[" => read_seq(rdr, "]"),
+        _ => read_atom(rdr),
+    }
+}
+
 pub fn read_str(str: String) -> MalRet {
     let tokens = tokenize(&str);
     println!("tokens: {:?}", tokens);
     if tokens.len() == 0 {
         return error("no input");
     }
-    read_atom(&mut Reader {
+    read_form(&mut Reader {
         pos: 0,
         tokens,
     })
