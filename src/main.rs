@@ -8,6 +8,7 @@ extern crate rustyline;
 use std::rc::Rc;
 
 use fnv::FnvHashMap;
+use itertools::Itertools;
 use rustyline::Editor;
 use rustyline::error::ReadlineError;
 
@@ -63,6 +64,28 @@ fn eval(ast: MalVal, env: Env) -> MalRet {
             match a0 {
                 Sym(ref a0sym) if a0sym == "def!" => {
                     env_set(&env, l[1].clone(), eval(l[2].clone(), env.clone())?)
+                }
+                Sym(ref a0sym) if a0sym == "let*" => {
+                    let let_env = env_new(Some(env.clone()));
+                    let (a1, a2) = (l[1].clone(), l[2].clone());
+                    match a1 {
+                        List(ref binds, _) | Vector(ref binds, _) => {
+                            for (b, e) in binds.iter().tuples() {
+                                match b {
+                                    Sym(_) => {
+                                        let _ = env_set(&let_env, b.clone(), eval(e.clone(), let_env.clone())?);
+                                    }
+                                    _ => {
+                                        return error("let* with non-Sym binding");
+                                    }
+                                }
+                            }
+                        }
+                        _ => {
+                            return error("let* with non-List bindings");
+                        }
+                    };
+                    eval(a2, let_env)
                 }
                 _ => match eval_ast(&ast, &env)? {
                     List(ref el, _) => {
