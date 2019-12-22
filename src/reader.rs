@@ -2,7 +2,7 @@ use std::rc::Rc;
 
 use regex::{Captures, Regex};
 
-use crate::types::{error, MalErr, MalRet, MalVal};
+use crate::types::{error, hash_map, MalErr, MalRet, MalVal};
 use crate::types::MalErr::ErrString;
 use crate::types::MalVal::{Bool, Int, List, Nil, Str, Sym, Vector};
 
@@ -23,10 +23,7 @@ impl Reader {
 
 fn tokenize(str: &str) -> Vec<String> {
     lazy_static! {
-        static ref RE: Regex = Regex::new(
-            r###"[\s,]*(~@|[\[\]{}()'`~^@]|"(?:\\.|[^\\"])*"?|;.*|[^\s\[\]{}('"`,;)]+)"###
-        )
-        .unwrap();
+        static ref RE: Regex = Regex::new(r###"[\s,]*(~@|[\[\]{}()'`~^@]|"(?:\\.|[^\\"])*"?|;.*|[^\s\[\]{}('"`,;)]+)"###).unwrap();
     }
 
     let mut res = vec![];
@@ -91,6 +88,7 @@ fn read_seq(rdr: &mut Reader, end: &str) -> MalRet {
     match end {
         ")" => Ok(list!(seq)),
         "]" => Ok(vector!(seq)),
+        "}" => hash_map(seq),
         _ => error("read_seq unknown end value"),
     }
 }
@@ -114,10 +112,21 @@ fn read_form(rdr: &mut Reader) -> MalRet {
             let _ = rdr.next();
             Ok(list![Sym("splice-unquote".to_string()), read_form(rdr)?])
         }
+        "^" => {
+            let _ = rdr.next();
+            let meta = read_form(rdr)?;
+            Ok(list![Sym("with-meta".to_string()), read_form(rdr)?, meta])
+        }
+        "@" => {
+            let _ = rdr.next();
+            Ok(list![Sym("deref".to_string()), read_form(rdr)?])
+        }
         ")" => error("unexpected ')'"),
         "(" => read_seq(rdr, ")"),
         "]" => error("unexpected ']'"),
         "[" => read_seq(rdr, "]"),
+        "}" => error("unexpected '}'"),
+        "{" => read_seq(rdr, "}"),
         _ => read_atom(rdr),
     }
 }
