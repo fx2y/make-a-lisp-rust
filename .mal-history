@@ -1,2 +1,100 @@
-test
-exit
+"+"
+","
+(1 2
+[1 2
+"abc
+"
+"\"
+"\\\\\\\\\\\\\\\\\\\"
+(1 "abc
+(1 "abc"
+[1 2
+'1
+'(1 2 3)
+'1
+;=>(quote 1)
+'(1 2 3)
+;=>(quote (1 2 3))
+`1
+;=>(quasiquote 1)
+`(1 2 3)
+;=>(quasiquote (1 2 3))
+~1
+;=>(unquote 1)
+~(1 2 3)
+;=>(unquote (1 2 3))
+`(1 ~a 3)
+;=>(quasiquote (1 (unquote a) 3))
+~@(1 2 3)
+;=>(splice-unquote (1 2 3))
+:kw
+(:kw1 :kw2 :kw3)
+[+ 1 2]
+[[3 4]]
+[+ 1 [+ 2 3]]
+  [ +   1   [+   2 3   ]   ]  
+([])
+{}
+;=>{}
+{ }
+;=>{}
+{"abc" 1}
+;=>{"abc" 1}
+{"a" {"b" 2}}
+;=>{"a" {"b" 2}}
+{"a" {"b" {"c" 3}}}
+;=>{"a" {"b" {"c" 3}}}
+{  "a"  {"b"   {  "cde"     3   }  }}
+;=>{"a" {"b" {"cde" 3}}}
+;;; The regexp sorcery here ensures that each key goes with the correct
+;;; value and that each key appears only once.
+{"a1" 1 "a2" 2 "a3" 3}
+;/{"a([1-3])" \1 "a(?!\1)([1-3])" \2 "a(?!\1)(?!\2)([1-3])" \3}
+{  :a  {:b   {  :cde     3   }  }}
+;=>{:a {:b {:cde 3}}}
+{"1" 1}
+;=>{"1" 1}
+({})
+1 ; comment after expression
+(+ 1 2)
+(+ 5 (* 2 3))
+(- (+ 5 (* 2 3)) 3)
+(/ (- (+ 5 (* 2 3)) 3) 4)
+(/ (- (+ 515 (* 87 311)) 302) 27)
+(* -3 6)
+(/ (- (+ 515 (* -87 311)) 296) 27)
+(abc 1 2 3)
+()
+[1 2 (+ 1 2)]
+{"a" (+ 7 8)}
+{:a (+ 7 8)}
+(+ 1 2)
+(/ (- (+ 5 (* 2 3)) 3) 4)
+(def! x 3)
+x
+(def! x 4)
+x
+(def! y (+ 1 7))
+y
+(def! mynum 111)
+(def! MYNUM 222)
+mynum
+MYNUM
+(abc 1 2 3)
+(def! w 123)
+(def! w (abc))
+w
+(let* (z 9) z)
+(let* (x 9) x)
+x
+(let* (z (+ 2 3)) (+ 1 z))
+(let* (p (+ 2 3) q (+ 2 p)) (+ p q))
+(def! y (let* (z 7) z))
+(def! a 4)
+(let* (q 9) q)
+(let* (q 9) a)
+(let* (z 2) (let* (q 9) a))
+a
+(let* [z 9] z)
+(let* [p (+ 2 3) q (+ 2 p)] (+ p q))
+(let* (a 5 b 6) [3 4 a [b 7] 8])
